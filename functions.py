@@ -6,6 +6,7 @@ from wx import TextEntry, FONTSTYLE_ITALIC
 from collections import namedtuple
 
 Mediums = namedtuple('Mediums', ('Undefined', 'Book', 'eBook', 'Wiki'))((-1, 0, 1, 2))
+OffOnTuple = namedtuple('OffOnTuple', ('Off', 'On'))
 
 
 class MacStuff:
@@ -48,6 +49,21 @@ class MacStuff:
 
 
 class RtfString(object):
+    CTRL_HEAD = br'{\rtf1\ansi\ansicpg1252\cocoartf1348\cocoasubrtf170'
+    CTRL_TAIL = br'}'
+
+    CTRL_BOLD_ON = br'\b '
+    CTRL_ITAL_ON = br'\i '
+    CTRL_UNLN_ON = br'\ul '
+
+    CTRL_BOLD_OFF = br'\b0 '
+    CTRL_ITAL_OFF = br'\i0 '
+    CTRL_UNLN_OFF = br'\ulnone '
+
+    CTRL_TUP_BOLD = OffOnTuple(CTRL_BOLD_OFF, CTRL_BOLD_ON)
+    CTRL_TUP_ITAL = OffOnTuple(CTRL_ITAL_OFF, CTRL_ITAL_ON)
+    CTRL_TUP_UNLN = OffOnTuple(CTRL_UNLN_OFF, CTRL_UNLN_ON)
+
     def __init__(self):
         self.raw_rtf = br'{\rtf1\ansi\ansicpg1252\cocoartf1348\cocoasubrtf170'
         self.set_font()
@@ -74,56 +90,41 @@ class RtfString(object):
                         br'\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640' + \
                         br'\pardirnatural\f0'
 
-    def bold_on(self):
-        if not self._is_bolded:
-            self._is_bolded = True
-            self.raw_rtf += br'\b '
-
-    def bold_off(self):
-        if self._is_bolded:
-            self._is_bolded = False
-            self.raw_rtf += br'\b0 '
-
     def set_bold(self, should_bold=True):
         assert isinstance(should_bold, bool)
-        if should_bold:
-            self.bold_on()
-        else:
-            self.bold_off()
+        if self._is_bolded != should_bold:
+            self._is_bolded = should_bold
+            self.raw_rtf += self.CTRL_TUP_BOLD[int(should_bold)]
 
-    def italics_on(self):
-        if not self._is_italicized:
-            self._is_italicized = True
-            self.raw_rtf += br'\i '
+    def bold_on(self):
+        self.set_bold(True)
 
-    def italics_off(self):
-        if self._is_italicized:
-            self._is_italicized = False
-            self.raw_rtf += br'\i0 '
+    def bold_off(self):
+        self.set_bold(False)
 
     def set_italics(self, should_italicize=True):
         assert isinstance(should_italicize, bool)
-        if should_italicize:
-            self.italics_on()
-        else:
-            self.italics_off()
+        if self._is_italicized != should_italicize:
+            self._is_italicized = should_italicize
+            self.raw_rtf += self.CTRL_TUP_ITAL[int(should_italicize)]
 
-    def underline_on(self):
-        if not self._is_underlined:
-            self._is_underlined = True
-            self.raw_rtf += br'\ul '
+    def italics_on(self):
+        self.set_italics(True)
 
-    def underline_off(self):
-        if self._is_underlined:
-            self._is_underlined = False
-            self.raw_rtf += br'\ulnone '
+    def italics_off(self):
+        self.set_italics(False)
 
     def set_underline(self, should_underline=True):
         assert isinstance(should_underline, bool)
-        if should_underline:
-            self.underline_on()
-        else:
-            self.underline_off()
+        if self._is_underlined != should_underline:
+            self._is_underlined = should_underline
+            self.raw_rtf += self.CTRL_TUP_UNLN[int(should_underline)]
+
+    def underline_on(self):
+        self.set_underline(True)
+
+    def underline_off(self):
+        self.set_underline(False)
 
     def export(self):
         return self.raw_rtf + br'}'
